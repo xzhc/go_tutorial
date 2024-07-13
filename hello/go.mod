@@ -1,6 +1,6 @@
-module example/hello
+module github.com/xzhc/go_tutorial
 
-go 1.21.6
+go 1.22.5
 
 require rsc.io/quote/v4 v4.0.1
 
