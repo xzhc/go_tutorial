@@ -1,6 +1,8 @@
 package main
 
-import "net"
+import (
+	"net"
+)
 
 type User struct {
 	Name   string
@@ -10,7 +12,7 @@ type User struct {
 	server *Server
 }
 
-//创建一个用户的API
+// 创建一个用户的API
 func NewUser(conn net.Conn, server *Server) *User {
 	userAddr := conn.RemoteAddr().String()
 
@@ -26,7 +28,7 @@ func NewUser(conn net.Conn, server *Server) *User {
 	return user
 }
 
-//用户上线功能
+// 用户上线功能
 func (this *User) Online() {
 	//用户上线后加入到onlineMap中
 	this.server.mapLock.Lock()
@@ -37,7 +39,7 @@ func (this *User) Online() {
 	this.server.BroadCast(this, "go online")
 }
 
-//用户下线功能
+// 用户下线功能
 func (this *User) Offline() {
 	//用户下线将用户从OnlineMap删除
 	this.server.mapLock.Lock()
@@ -48,7 +50,7 @@ func (this *User) Offline() {
 	this.server.BroadCast(this, "offline")
 }
 
-//用户处理消息
+// 用户处理消息
 func (this *User) DoMessage(msg string) {
 	if msg == "who" {
 		//查询当前在线用户有哪些
@@ -57,20 +59,34 @@ func (this *User) DoMessage(msg string) {
 			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "online...\n"
 			this.sendMsg(onlineMsg)
 		}
-
 		this.server.mapLock.Unlock()
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		newName := msg[7:]
+		//判断name是否存在
+		_, ok := this.server.OnlineMap[newName]
+		if ok {
+			this.sendMsg("the username is used \n")
+		} else {
+			this.server.mapLock.Lock()
+			delete(this.server.OnlineMap, this.Name)
+			this.server.OnlineMap[newName] = this
+			this.server.mapLock.Unlock()
+
+			this.Name = newName
+			this.sendMsg("You have updated username:" + this.Name + "\n")
+		}
 	} else {
 		this.server.BroadCast(this, msg)
 	}
 
 }
 
-//给当前user对应的客户端发送信息
+// 给当前user对应的客户端发送信息
 func (this *User) sendMsg(msg string) {
 	this.conn.Write([]byte(msg))
 }
 
-//监听当前User channel的方法，一旦有消息就发送给客户端
+// 监听当前User channel的方法，一旦有消息就发送给客户端
 func (this *User) ListenMessage() {
 	for {
 		msg := <-this.C
