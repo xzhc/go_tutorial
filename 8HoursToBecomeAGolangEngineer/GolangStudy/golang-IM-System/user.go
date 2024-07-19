@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"strings"
 )
 
 type User struct {
@@ -75,6 +76,31 @@ func (this *User) DoMessage(msg string) {
 			this.Name = newName
 			this.sendMsg("You have updated username:" + this.Name + "\n")
 		}
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		//消息格式：to|zhangsan|content
+
+		//1.获取用户的客户名
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			this.sendMsg("message formatation is uncorrect, please use 'to | zhangsan | content'. \n")
+			return
+		}
+		//2.根据用户名得到对方的User对象
+		remoteUser, ok := this.server.OnlineMap[remoteName]
+		if !ok {
+			this.sendMsg("the username isn't exist \n")
+			return
+		}
+
+		//3.获取消息内容
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			this.sendMsg("no content,please resend!")
+			return
+		}
+
+		remoteUser.sendMsg(this.Name + "to you:" + content)
+
 	} else {
 		this.server.BroadCast(this, msg)
 	}
