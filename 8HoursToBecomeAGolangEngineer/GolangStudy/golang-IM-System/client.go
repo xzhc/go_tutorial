@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"net"
@@ -33,9 +34,21 @@ func NewClient(serverIp string, serverPort int) *Client {
 	return client
 }
 
-func main() {
+var serverIp string
+var serverPort int
 
-	client := NewClient("127.0.0.1", 8888)
+// init函数初始化命令行参数
+// ./client -ip 127.0.0.1 -port 8888
+func init() {
+	flag.StringVar(&serverIp, "ip", "127.0.0.1", "设置服务器IP地址(默认是127.0.0.1)")
+	flag.IntVar(&serverPort, "port", 8888, "设置服务器默认端口(默认是8888)")
+
+}
+func main() {
+	//命令行解析
+	flag.Parse()
+
+	client := NewClient(serverIp, serverPort)
 	if client == nil {
 		fmt.Println(">>>>> 链接服务器失败...")
 		return
